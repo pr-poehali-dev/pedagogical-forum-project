@@ -1,4 +1,5 @@
 {
+  "upload-to-s3": "https://functions.poehali.dev/92d247cf-0040-4dac-b2de-ac96de389848",
   "upload-file": "https://functions.poehali.dev/933abfe9-deb8-495b-85ca-536ad38d4199",
   "articles": "https://functions.poehali.dev/f3b57684-2e77-461c-b758-e052ad2bee51",
   "materials": "https://functions.poehali.dev/bd58dfc4-9022-40ad-94a2-4a3d44169533",

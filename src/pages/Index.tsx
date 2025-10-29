@@ -12,6 +12,7 @@ const API_MESSAGES = 'https://functions.poehali.dev/5eb477db-2802-4fa6-9703-3000
 const API_MATERIALS = 'https://functions.poehali.dev/bd58dfc4-9022-40ad-94a2-4a3d44169533';
 const API_ARTICLES = 'https://functions.poehali.dev/f3b57684-2e77-461c-b758-e052ad2bee51';
 const API_UPLOAD = 'https://functions.poehali.dev/933abfe9-deb8-495b-85ca-536ad38d4199';
+const API_UPLOAD_S3 = 'https://functions.poehali.dev/92d247cf-0040-4dac-b2de-ac96de389848';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('home');
@@ -25,6 +26,7 @@ const Index = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [extractedText, setExtractedText] = useState('');
   const [selectedArticle, setSelectedArticle] = useState<any>(null);
+  const [uploadedFileUrl, setUploadedFileUrl] = useState('');
 
   useEffect(() => {
     loadMessages();
@@ -146,7 +148,7 @@ const Index = () => {
         const base64 = event.target?.result as string;
         const base64Content = base64.split(',')[1];
 
-        const response = await fetch(API_UPLOAD, {
+        const textResponse = await fetch(API_UPLOAD, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -158,10 +160,27 @@ const Index = () => {
           })
         });
 
-        const data = await response.json();
-        if (data.text) {
-          setExtractedText(data.text);
+        const textData = await textResponse.json();
+        if (textData.text) {
+          setExtractedText(textData.text);
         }
+
+        const s3Response = await fetch(API_UPLOAD_S3, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            file: base64Content,
+            fileName: file.name
+          })
+        });
+
+        const s3Data = await s3Response.json();
+        if (s3Data.url) {
+          setUploadedFileUrl(s3Data.url);
+        }
+        
         setLoading(false);
       };
       reader.readAsDataURL(file);
@@ -199,6 +218,7 @@ const Index = () => {
           content,
           author,
           category,
+          file_url: uploadedFileUrl,
           file_name: selectedFile?.name,
           file_type: selectedFile?.name.split('.').pop()
         })
@@ -210,6 +230,7 @@ const Index = () => {
         setShowAddArticle(false);
         setSelectedFile(null);
         setExtractedText('');
+        setUploadedFileUrl('');
       }
     } catch (error) {
       console.error('Ошибка добавления статьи:', error);
@@ -852,11 +873,17 @@ const Index = () => {
                         <Icon name="Calendar" size={16} />
                         <span>{selectedArticle.date}</span>
                       </div>
-                      {selectedArticle.file_name && (
-                        <div className="flex items-center gap-2">
-                          <Icon name="Paperclip" size={16} />
-                          <span>{selectedArticle.file_name}</span>
-                        </div>
+                      {selectedArticle.file_name && selectedArticle.file_url && (
+                        <a 
+                          href={selectedArticle.file_url} 
+                          download={selectedArticle.file_name}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
+                        >
+                          <Icon name="Download" size={16} />
+                          <span>Скачать {selectedArticle.file_name}</span>
+                        </a>
                       )}
                     </div>
                   </div>

@@ -1,0 +1,16 @@
+{
+  "tests": [
+    {
+      "name": "Test missing file",
+      "method": "POST",
+      "body": {
+        "fileName": "test.pdf"
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
