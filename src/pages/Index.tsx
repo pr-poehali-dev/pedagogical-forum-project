@@ -520,7 +520,7 @@ const Index = () => {
               </div>
             </div>
             <div className="text-center text-sm text-muted-foreground">
-              © 2024 ПедагогикаЛаб. Обучаем через ассоциации
+              © 2025 ПедагогикаЛаб. Обучаем через ассоциации
             </div>
           </div>
         </div>
