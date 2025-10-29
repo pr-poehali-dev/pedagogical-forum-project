@@ -11,6 +11,19 @@
       "method": "GET",
       "path": "/?category=Теория",
       "expectedStatus": 200
+    },
+    {
+      "name": "Add new article",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "title": "Тестовая статья",
+        "excerpt": "Краткое описание",
+        "content": "Полный текст статьи",
+        "author": "Тестовый автор",
+        "category": "Теория"
+      },
+      "expectedStatus": 201
     }
   ]
 }

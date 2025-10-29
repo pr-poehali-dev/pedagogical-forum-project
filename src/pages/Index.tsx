@@ -20,6 +20,7 @@ const Index = () => {
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showAddArticle, setShowAddArticle] = useState(false);
 
   useEffect(() => {
     loadMessages();
@@ -115,6 +116,45 @@ const Index = () => {
       }
     } catch (error) {
       console.error('Ошибка добавления материала:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddArticle = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const title = formData.get('title') as string;
+    const excerpt = formData.get('excerpt') as string;
+    const content = formData.get('content') as string;
+    const author = formData.get('author') as string;
+    const category = formData.get('category') as string;
+
+    if (!title.trim()) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(API_ARTICLES, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          excerpt,
+          content,
+          author,
+          category
+        })
+      });
+      const data = await response.json();
+      if (data.article) {
+        setArticles([data.article, ...articles]);
+        e.currentTarget.reset();
+        setShowAddArticle(false);
+      }
+    } catch (error) {
+      console.error('Ошибка добавления статьи:', error);
     } finally {
       setLoading(false);
     }
@@ -380,10 +420,70 @@ const Index = () => {
 
         {activeSection === 'articles' && (
           <div className="max-w-5xl mx-auto animate-fade-in">
-            <div className="mb-8">
-              <h2 className="text-4xl font-bold mb-2">Библиотека статей</h2>
-              <p className="text-muted-foreground text-lg">Изучайте ассоциативную методику на практике</p>
+            <div className="mb-8 flex items-center justify-between">
+              <div>
+                <h2 className="text-4xl font-bold mb-2">Библиотека статей</h2>
+                <p className="text-muted-foreground text-lg">Изучайте ассоциативную методику на практике</p>
+              </div>
+              <Button 
+                onClick={() => setShowAddArticle(!showAddArticle)}
+                className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity"
+              >
+                <Icon name="Plus" size={20} className="mr-2" />
+                Добавить статью
+              </Button>
             </div>
+
+            {showAddArticle && (
+              <Card className="border-2 shadow-lg mb-6 animate-fade-in">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Icon name="FileEdit" size={24} />
+                    Новая статья
+                  </CardTitle>
+                  <CardDescription>Поделитесь своими знаниями о методике</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form className="space-y-4" onSubmit={handleAddArticle}>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Название статьи</label>
+                      <Input name="title" placeholder="Введите название..." required />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Краткое описание</label>
+                      <Textarea name="excerpt" placeholder="Опишите кратко содержание статьи..." rows={2} required />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Полный текст</label>
+                      <Textarea name="content" placeholder="Напишите полный текст статьи..." rows={6} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Автор</label>
+                        <Input name="author" placeholder="Ваше имя" required />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Категория</label>
+                        <select name="category" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" required>
+                          <option value="Теория">Теория</option>
+                          <option value="Практика">Практика</option>
+                          <option value="Методика">Методика</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="submit" disabled={loading} className="flex-1 bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity">
+                        <Icon name="Send" size={20} className="mr-2" />
+                        Опубликовать
+                      </Button>
+                      <Button type="button" variant="outline" onClick={() => setShowAddArticle(false)}>
+                        Отмена
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
 
             <Tabs defaultValue="all" className="w-full">
               <TabsList className="grid w-full max-w-md grid-cols-4 mb-8">

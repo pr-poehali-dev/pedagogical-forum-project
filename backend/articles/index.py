@@ -5,9 +5,9 @@ from typing import Dict, Any
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Business: API для получения статей по ассоциативной методике
-    Args: event с httpMethod (GET/OPTIONS), queryStringParameters для фильтрации
-    Returns: HTTP response со списком статей
+    Business: API для работы со статьями по ассоциативной методике
+    Args: event с httpMethod (GET/POST/OPTIONS), body для POST, queryStringParameters для фильтрации
+    Returns: HTTP response со списком статей или новой статьёй
     '''
     method: str = event.get('httpMethod', 'GET')
     
@@ -16,7 +16,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, OPTIONS',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type',
                 'Access-Control-Max-Age': '86400'
             },
@@ -73,6 +73,56 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'Access-Control-Allow-Origin': '*'
                 },
                 'body': json.dumps({'articles': articles}, ensure_ascii=False),
+                'isBase64Encoded': False
+            }
+        
+        elif method == 'POST':
+            body_data = json.loads(event.get('body', '{}'))
+            title = body_data.get('title', '')
+            excerpt = body_data.get('excerpt', '')
+            content = body_data.get('content', '')
+            author = body_data.get('author', 'Аноним')
+            category = body_data.get('category', 'Общее')
+            
+            if not title:
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({'error': 'Название статьи обязательно'}, ensure_ascii=False),
+                    'isBase64Encoded': False
+                }
+            
+            cursor.execute('''
+                INSERT INTO articles (title, excerpt, content, author, category) 
+                VALUES (%s, %s, %s, %s, %s) 
+                RETURNING id, title, excerpt, author, category, TO_CHAR(created_at, 'DD Month YYYY') as date
+            ''', (title, excerpt, content, author, category))
+            
+            conn.commit()
+            row = cursor.fetchone()
+            
+            new_article = {
+                'id': row[0],
+                'title': row[1],
+                'excerpt': row[2],
+                'author': row[3],
+                'category': row[4],
+                'date': row[5]
+            }
+            
+            cursor.close()
+            conn.close()
+            
+            return {
+                'statusCode': 201,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'article': new_article}, ensure_ascii=False),
                 'isBase64Encoded': False
             }
         
