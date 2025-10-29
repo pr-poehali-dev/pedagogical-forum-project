@@ -1,0 +1,16 @@
+{
+  "tests": [
+    {
+      "name": "Get all articles",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Get articles by category",
+      "method": "GET",
+      "path": "/?category=Теория",
+      "expectedStatus": 200
+    }
+  ]
+}

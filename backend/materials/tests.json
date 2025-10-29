@@ -1,0 +1,23 @@
+{
+  "tests": [
+    {
+      "name": "Get all materials",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Add new material",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "title": "Новый материал",
+        "description": "Описание материала",
+        "author": "Тестовый автор",
+        "file_type": "PDF",
+        "category": "Методика"
+      },
+      "expectedStatus": 201
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,55 +8,114 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Icon from '@/components/ui/icon';
 
+const API_MESSAGES = 'https://functions.poehali.dev/5eb477db-2802-4fa6-9703-300096613c44';
+const API_MATERIALS = 'https://functions.poehali.dev/bd58dfc4-9022-40ad-94a2-4a3d44169533';
+const API_ARTICLES = 'https://functions.poehali.dev/f3b57684-2e77-461c-b758-e052ad2bee51';
+
 const Index = () => {
   const [activeSection, setActiveSection] = useState('home');
-  const [messages, setMessages] = useState([
-    { id: 1, author: 'Анна Петрова', text: 'Использую метод ассоциаций на уроках истории. Дети запоминают даты через образы!', time: '10:30' },
-    { id: 2, author: 'Иван Сергеев', text: 'Кто-нибудь пробовал применять мнемотехники для изучения иностранных языков?', time: '11:15' },
-    { id: 3, author: 'Мария Козлова', text: 'Отличная идея! У меня есть готовые карточки с ассоциациями, могу поделиться', time: '11:42' }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const [articles, setArticles] = useState([]);
+  const [materials, setMaterials] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const articles = [
-    {
-      id: 1,
-      title: 'Основы ассоциативной методики в педагогике',
-      excerpt: 'Познакомьтесь с фундаментальными принципами метода ассоциаций и его применением в современном образовании.',
-      author: 'Елена Волкова',
-      date: '15 октября 2024',
-      category: 'Теория'
-    },
-    {
-      id: 2,
-      title: 'Мнемотехники для запоминания математических формул',
-      excerpt: 'Практические примеры использования образных ассоциаций для изучения точных наук.',
-      author: 'Дмитрий Новиков',
-      date: '12 октября 2024',
-      category: 'Практика'
-    },
-    {
-      id: 3,
-      title: 'Игровые методы обучения через ассоциации',
-      excerpt: 'Как превратить урок в увлекательное путешествие с помощью ассоциативных игр.',
-      author: 'Ольга Смирнова',
-      date: '8 октября 2024',
-      category: 'Методика'
+  useEffect(() => {
+    loadMessages();
+    loadArticles();
+    loadMaterials();
+  }, []);
+
+  const loadMessages = async () => {
+    try {
+      const response = await fetch(API_MESSAGES);
+      const data = await response.json();
+      setMessages(data.messages || []);
+    } catch (error) {
+      console.error('Ошибка загрузки сообщений:', error);
     }
-  ];
+  };
 
-  const materials = [
-    { id: 1, title: 'Карточки для изучения исторических дат', author: 'Анна П.', type: 'PDF', downloads: 234 },
-    { id: 2, title: 'Презентация: Ассоциации в химии', author: 'Иван С.', type: 'PPTX', downloads: 189 },
-    { id: 3, title: 'Шаблон урока с мнемотехниками', author: 'Мария К.', type: 'DOCX', downloads: 312 }
-  ];
+  const loadArticles = async () => {
+    try {
+      const response = await fetch(API_ARTICLES);
+      const data = await response.json();
+      setArticles(data.articles || []);
+    } catch (error) {
+      console.error('Ошибка загрузки статей:', error);
+    }
+  };
 
-  const handleSendMessage = () => {
+  const loadMaterials = async () => {
+    try {
+      const response = await fetch(API_MATERIALS);
+      const data = await response.json();
+      setMaterials(data.materials || []);
+    } catch (error) {
+      console.error('Ошибка загрузки материалов:', error);
+    }
+  };
+
+  const handleSendMessage = async () => {
     if (newMessage.trim()) {
-      setMessages([
-        ...messages,
-        { id: messages.length + 1, author: 'Вы', text: newMessage, time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) }
-      ]);
-      setNewMessage('');
+      setLoading(true);
+      try {
+        const response = await fetch(API_MESSAGES, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            author: 'Вы',
+            text: newMessage
+          })
+        });
+        const data = await response.json();
+        if (data.message) {
+          setMessages([...messages, data.message]);
+          setNewMessage('');
+        }
+      } catch (error) {
+        console.error('Ошибка отправки сообщения:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleAddMaterial = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+    const category = formData.get('category') as string;
+
+    if (!title.trim()) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(API_MATERIALS, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          description,
+          author: 'Вы',
+          file_type: 'PDF',
+          category
+        })
+      });
+      const data = await response.json();
+      if (data.material) {
+        setMaterials([data.material, ...materials]);
+        e.currentTarget.reset();
+      }
+    } catch (error) {
+      console.error('Ошибка добавления материала:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -225,7 +284,7 @@ const Index = () => {
                       onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                       className="flex-1"
                     />
-                    <Button onClick={handleSendMessage} className="bg-gradient-to-r from-primary to-secondary">
+                    <Button onClick={handleSendMessage} disabled={loading} className="bg-gradient-to-r from-primary to-secondary">
                       <Icon name="Send" size={20} />
                     </Button>
                   </div>
@@ -339,22 +398,22 @@ const Index = () => {
                   <CardDescription>Поделитесь своими наработками с коллегами</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form className="space-y-4">
+                  <form className="space-y-4" onSubmit={handleAddMaterial}>
                     <div>
                       <label className="text-sm font-medium mb-2 block">Название материала</label>
-                      <Input placeholder="Введите название..." />
+                      <Input name="title" placeholder="Введите название..." required />
                     </div>
                     <div>
                       <label className="text-sm font-medium mb-2 block">Описание</label>
-                      <Textarea placeholder="Расскажите о вашем материале..." rows={4} />
+                      <Textarea name="description" placeholder="Расскажите о вашем материале..." rows={4} />
                     </div>
                     <div>
                       <label className="text-sm font-medium mb-2 block">Категория</label>
-                      <Input placeholder="Например: Математика, История..." />
+                      <Input name="category" placeholder="Например: Математика, История..." />
                     </div>
-                    <Button className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity" size="lg">
+                    <Button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity" size="lg">
                       <Icon name="Upload" size={20} className="mr-2" />
-                      Загрузить файл
+                      Добавить материал
                     </Button>
                   </form>
                 </CardContent>
