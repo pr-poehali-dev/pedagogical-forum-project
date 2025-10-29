@@ -11,6 +11,7 @@ import Icon from '@/components/ui/icon';
 const API_MESSAGES = 'https://functions.poehali.dev/5eb477db-2802-4fa6-9703-300096613c44';
 const API_MATERIALS = 'https://functions.poehali.dev/bd58dfc4-9022-40ad-94a2-4a3d44169533';
 const API_ARTICLES = 'https://functions.poehali.dev/f3b57684-2e77-461c-b758-e052ad2bee51';
+const API_UPLOAD = 'https://functions.poehali.dev/933abfe9-deb8-495b-85ca-536ad38d4199';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('home');
@@ -21,6 +22,9 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showAddArticle, setShowAddArticle] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [extractedText, setExtractedText] = useState('');
+  const [selectedArticle, setSelectedArticle] = useState<any>(null);
 
   useEffect(() => {
     loadMessages();
@@ -121,14 +125,64 @@ const Index = () => {
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['.txt', '.rtf', '.docx', '.doc', '.odt', '.pdf'];
+    const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
+    
+    if (!allowedTypes.includes(fileExt)) {
+      alert('Неподдерживаемый формат файла. Разрешены: ' + allowedTypes.join(', '));
+      return;
+    }
+
+    setSelectedFile(file);
+    setLoading(true);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64 = event.target?.result as string;
+        const base64Content = base64.split(',')[1];
+
+        const response = await fetch(API_UPLOAD, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            file: base64Content,
+            fileName: file.name,
+            fileType: fileExt.slice(1)
+          })
+        });
+
+        const data = await response.json();
+        if (data.text) {
+          setExtractedText(data.text);
+        }
+        setLoading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Ошибка загрузки файла:', error);
+      setLoading(false);
+    }
+  };
+
   const handleAddArticle = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const title = formData.get('title') as string;
     const excerpt = formData.get('excerpt') as string;
-    const content = formData.get('content') as string;
+    let content = formData.get('content') as string;
     const author = formData.get('author') as string;
     const category = formData.get('category') as string;
+
+    if (extractedText) {
+      content = extractedText;
+    }
 
     if (!title.trim()) return;
 
@@ -144,7 +198,9 @@ const Index = () => {
           excerpt,
           content,
           author,
-          category
+          category,
+          file_name: selectedFile?.name,
+          file_type: selectedFile?.name.split('.').pop()
         })
       });
       const data = await response.json();
@@ -152,11 +208,25 @@ const Index = () => {
         setArticles([data.article, ...articles]);
         e.currentTarget.reset();
         setShowAddArticle(false);
+        setSelectedFile(null);
+        setExtractedText('');
       }
     } catch (error) {
       console.error('Ошибка добавления статьи:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadArticleDetails = async (articleId: number) => {
+    try {
+      const response = await fetch(`${API_ARTICLES}?id=${articleId}`);
+      const data = await response.json();
+      if (data.article) {
+        setSelectedArticle(data.article);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки статьи:', error);
     }
   };
 
@@ -582,8 +652,34 @@ const Index = () => {
                       <Textarea name="excerpt" placeholder="Опишите кратко содержание статьи..." rows={2} required />
                     </div>
                     <div>
-                      <label className="text-sm font-medium mb-2 block">Полный текст</label>
-                      <Textarea name="content" placeholder="Напишите полный текст статьи..." rows={6} />
+                      <label className="text-sm font-medium mb-2 block">Загрузить файл статьи</label>
+                      <div className="space-y-2">
+                        <Input 
+                          type="file" 
+                          accept=".txt,.rtf,.docx,.doc,.odt,.pdf"
+                          onChange={handleFileUpload}
+                          disabled={loading}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Поддерживаемые форматы: .txt, .rtf, .docx, .doc, .odt, .pdf
+                        </p>
+                        {selectedFile && (
+                          <div className="flex items-center gap-2 text-sm text-primary">
+                            <Icon name="FileCheck" size={16} />
+                            <span>Загружен: {selectedFile.name}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Или введите текст вручную</label>
+                      <Textarea 
+                        name="content" 
+                        placeholder="Напишите полный текст статьи..." 
+                        rows={6}
+                        value={extractedText}
+                        onChange={(e) => setExtractedText(e.target.value)}
+                      />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -642,7 +738,11 @@ const Index = () => {
                           </div>
                           <span className="text-sm font-medium">{article.author}</span>
                         </div>
-                        <Button variant="outline" className="hover:bg-primary hover:text-white transition-colors">
+                        <Button 
+                          variant="outline" 
+                          className="hover:bg-primary hover:text-white transition-colors"
+                          onClick={() => loadArticleDetails(article.id)}
+                        >
                           Читать
                           <Icon name="ArrowRight" size={16} className="ml-2" />
                         </Button>
@@ -731,6 +831,55 @@ const Index = () => {
                 </CardContent>
               </Card>
             </div>
+          </div>
+        )}
+
+        {selectedArticle && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+            <Card className="max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+              <CardHeader className="border-b bg-gradient-to-r from-primary/10 to-secondary/10">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <Badge className="bg-secondary text-white mb-2">{selectedArticle.category}</Badge>
+                    <CardTitle className="text-3xl mb-2">{selectedArticle.title}</CardTitle>
+                    <CardDescription className="text-base">{selectedArticle.excerpt}</CardDescription>
+                    <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Icon name="User" size={16} />
+                        <span>{selectedArticle.author}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Icon name="Calendar" size={16} />
+                        <span>{selectedArticle.date}</span>
+                      </div>
+                      {selectedArticle.file_name && (
+                        <div className="flex items-center gap-2">
+                          <Icon name="Paperclip" size={16} />
+                          <span>{selectedArticle.file_name}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelectedArticle(null)}
+                    className="flex-shrink-0"
+                  >
+                    <Icon name="X" size={24} />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <ScrollArea className="h-[60vh] p-6">
+                  <div className="prose prose-lg max-w-none">
+                    <p className="whitespace-pre-wrap text-base leading-relaxed">
+                      {selectedArticle.content}
+                    </p>
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
           </div>
         )}
       </main>

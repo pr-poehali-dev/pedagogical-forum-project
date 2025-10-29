@@ -34,6 +34,42 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             params = event.get('queryStringParameters') or {}
             category = params.get('category')
             
+            article_id = params.get('id')
+            
+            if article_id:
+                cursor.execute('''
+                    SELECT id, title, excerpt, content, author, category,
+                           TO_CHAR(created_at, 'DD Month YYYY') as date,
+                           file_url, file_name, file_type
+                    FROM articles 
+                    WHERE id = %s
+                ''', (article_id,))
+                row = cursor.fetchone()
+                if row:
+                    article = {
+                        'id': row[0],
+                        'title': row[1],
+                        'excerpt': row[2],
+                        'content': row[3],
+                        'author': row[4],
+                        'category': row[5],
+                        'date': row[6],
+                        'file_url': row[7],
+                        'file_name': row[8],
+                        'file_type': row[9]
+                    }
+                    cursor.close()
+                    conn.close()
+                    return {
+                        'statusCode': 200,
+                        'headers': {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
+                        },
+                        'body': json.dumps({'article': article}, ensure_ascii=False),
+                        'isBase64Encoded': False
+                    }
+            
             if category and category != 'all':
                 cursor.execute('''
                     SELECT id, title, excerpt, author, category,
@@ -83,6 +119,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             content = body_data.get('content', '')
             author = body_data.get('author', 'Аноним')
             category = body_data.get('category', 'Общее')
+            file_url = body_data.get('file_url')
+            file_name = body_data.get('file_name')
+            file_type = body_data.get('file_type')
             
             if not title:
                 return {
@@ -96,10 +135,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 }
             
             cursor.execute('''
-                INSERT INTO articles (title, excerpt, content, author, category) 
-                VALUES (%s, %s, %s, %s, %s) 
+                INSERT INTO articles (title, excerpt, content, author, category, file_url, file_name, file_type) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s) 
                 RETURNING id, title, excerpt, author, category, TO_CHAR(created_at, 'DD Month YYYY') as date
-            ''', (title, excerpt, content, author, category))
+            ''', (title, excerpt, content, author, category, file_url, file_name, file_type))
             
             conn.commit()
             row = cursor.fetchone()

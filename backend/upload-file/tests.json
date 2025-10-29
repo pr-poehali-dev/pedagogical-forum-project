@@ -1,0 +1,32 @@
+{
+  "tests": [
+    {
+      "name": "Test text file upload",
+      "method": "POST",
+      "body": {
+        "file": "0J/RgNC40LLQtdGCINC80LjRgA==",
+        "fileName": "test.txt",
+        "fileType": "txt"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "text": "string",
+        "fileName": "test.txt",
+        "fileType": "txt"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Test missing file",
+      "method": "POST",
+      "body": {
+        "fileName": "test.txt"
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
