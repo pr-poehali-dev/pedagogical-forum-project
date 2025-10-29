@@ -19,6 +19,7 @@ const Index = () => {
   const [articles, setArticles] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     loadMessages();
@@ -158,11 +159,94 @@ const Index = () => {
                 Копилка
               </button>
             </div>
-            <Button className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity">
-              Войти
-            </Button>
+            <div className="flex items-center gap-4">
+              <Button className="hidden md:flex bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity">
+                Войти
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                <Icon name={mobileMenuOpen ? 'X' : 'Menu'} size={24} />
+              </Button>
+            </div>
           </div>
         </div>
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t bg-white animate-fade-in">
+            <div className="container mx-auto px-4 py-4 flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setActiveSection('home');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+                  activeSection === 'home' 
+                    ? 'bg-gradient-to-r from-primary to-secondary text-white' 
+                    : 'text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon name="Home" size={20} />
+                  <span>Главная</span>
+                </div>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveSection('discussions');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+                  activeSection === 'discussions' 
+                    ? 'bg-gradient-to-r from-primary to-secondary text-white' 
+                    : 'text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon name="MessageCircle" size={20} />
+                  <span>Обсуждения</span>
+                </div>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveSection('articles');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+                  activeSection === 'articles' 
+                    ? 'bg-gradient-to-r from-primary to-secondary text-white' 
+                    : 'text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon name="BookOpen" size={20} />
+                  <span>Статьи</span>
+                </div>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveSection('library');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+                  activeSection === 'library' 
+                    ? 'bg-gradient-to-r from-primary to-secondary text-white' 
+                    : 'text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon name="FolderOpen" size={20} />
+                  <span>Копилка</span>
+                </div>
+              </button>
+              <Button className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity mt-2">
+                Войти
+              </Button>
+            </div>
+          </div>
+        )}
       </nav>
 
       <main className="container mx-auto px-4 py-12">
