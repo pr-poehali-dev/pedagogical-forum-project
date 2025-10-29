@@ -293,9 +293,6 @@ const Index = () => {
         {activeSection === 'home' && (
           <div className="space-y-16 animate-fade-in">
             <section className="text-center max-w-4xl mx-auto space-y-6">
-              <Badge className="bg-secondary text-white px-4 py-2 text-sm">
-                Платформа для молодых педагогов
-              </Badge>
               <h2 className="text-5xl md:text-6xl font-bold leading-tight bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
                 Обучай через ассоциации
               </h2>
