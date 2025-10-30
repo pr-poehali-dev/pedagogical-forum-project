@@ -10,11 +10,11 @@
       },
       "expectedStatus": 200,
       "expectedBody": {
-        "text": "string",
+        "html": "<p>Привет мир</p>",
+        "images": [],
         "fileName": "test.txt",
         "fileType": "txt"
-      },
-      "bodyMatcher": "partial"
+      }
     },
     {
       "name": "Test missing file",

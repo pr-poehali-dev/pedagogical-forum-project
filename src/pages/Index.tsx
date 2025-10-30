@@ -25,6 +25,8 @@ const Index = () => {
   const [showAddArticle, setShowAddArticle] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [extractedText, setExtractedText] = useState('');
+  const [extractedHtml, setExtractedHtml] = useState('');
+  const [extractedImages, setExtractedImages] = useState<string[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<any>(null);
   const [uploadedFileUrl, setUploadedFileUrl] = useState('');
 
@@ -202,8 +204,12 @@ const Index = () => {
         });
 
         const textData = await textResponse.json();
-        if (textData.text) {
-          setExtractedText(textData.text);
+        if (textData.html) {
+          setExtractedHtml(textData.html);
+          setExtractedText(textData.html.replace(/<[^>]*>/g, ''));
+        }
+        if (textData.images && textData.images.length > 0) {
+          setExtractedImages(textData.images.map((img: any) => img.data));
         }
 
         const s3Response = await fetch(API_UPLOAD_S3, {
@@ -240,7 +246,9 @@ const Index = () => {
     const author = formData.get('author') as string;
     const category = formData.get('category') as string;
 
-    if (extractedText) {
+    if (extractedHtml) {
+      content = extractedHtml;
+    } else if (extractedText) {
       content = extractedText;
     }
 
@@ -271,6 +279,8 @@ const Index = () => {
         setShowAddArticle(false);
         setSelectedFile(null);
         setExtractedText('');
+        setExtractedHtml('');
+        setExtractedImages([]);"
         setUploadedFileUrl('');
       }
     } catch (error) {
@@ -631,9 +641,31 @@ const Index = () => {
                           Поддерживаемые форматы: .txt, .rtf, .docx, .doc, .odt, .pdf
                         </p>
                         {selectedFile && (
-                          <div className="flex items-center gap-2 text-sm text-primary">
-                            <Icon name="FileCheck" size={16} />
-                            <span>Загружен: {selectedFile.name}</span>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm text-primary">
+                              <Icon name="FileCheck" size={16} />
+                              <span>Загружен: {selectedFile.name}</span>
+                            </div>
+                            {extractedImages.length > 0 && (
+                              <div className="mt-4">
+                                <p className="text-sm font-medium mb-2">Найдено изображений: {extractedImages.length}</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                  {extractedImages.slice(0, 4).map((img, idx) => (
+                                    <img 
+                                      key={idx} 
+                                      src={img} 
+                                      alt={`Изображение ${idx + 1}`}
+                                      className="w-full h-32 object-cover rounded border"
+                                    />
+                                  ))}
+                                </div>
+                                {extractedImages.length > 4 && (
+                                  <p className="text-xs text-muted-foreground mt-2">
+                                    И ещё {extractedImages.length - 4} изображений...
+                                  </p>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -644,9 +676,17 @@ const Index = () => {
                         name="content" 
                         placeholder="Напишите полный текст статьи..." 
                         rows={6}
-                        value={extractedText}
-                        onChange={(e) => setExtractedText(e.target.value)}
+                        value={extractedHtml || extractedText}
+                        onChange={(e) => {
+                          setExtractedText(e.target.value);
+                          setExtractedHtml('');
+                        }}
                       />
+                      {extractedHtml && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          ℹ️ Обнаружены таблицы и форматирование из файла. Редактирование вручную отключит форматирование.
+                        </p>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -865,11 +905,14 @@ const Index = () => {
               </CardHeader>
               <CardContent className="p-0">
                 <ScrollArea className="h-[60vh] p-6">
-                  <div className="prose prose-lg max-w-none">
-                    <p className="whitespace-pre-wrap text-base leading-relaxed">
-                      {selectedArticle.content}
-                    </p>
-                  </div>
+                  <div 
+                    className="prose prose-lg max-w-none"
+                    dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
+                    style={{
+                      lineHeight: '1.8',
+                      fontSize: '16px'
+                    }}
+                  />
                 </ScrollArea>
               </CardContent>
             </Card>
