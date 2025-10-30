@@ -127,6 +127,47 @@ const Index = () => {
     }
   };
 
+  const handleDeleteArticle = async (articleId: number) => {
+    if (!confirm('Вы уверены, что хотите удалить эту статью?')) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_ARTICLES}?id=${articleId}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+      if (data.success) {
+        setArticles(articles.filter(a => a.id !== articleId));
+        if (selectedArticle?.id === articleId) {
+          setSelectedArticle(null);
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка удаления статьи:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteMaterial = async (materialId: number) => {
+    if (!confirm('Вы уверены, что хотите удалить этот материал?')) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_MATERIALS}?id=${materialId}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+      if (data.success) {
+        setMaterials(materials.filter(m => m.id !== materialId));
+      }
+    } catch (error) {
+      console.error('Ошибка удаления материала:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -272,12 +313,6 @@ const Index = () => {
                 Главная
               </button>
               <button
-                onClick={() => setActiveSection('discussions')}
-                className={`font-medium transition-colors ${activeSection === 'discussions' ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
-              >
-                Обсуждения
-              </button>
-              <button
                 onClick={() => setActiveSection('articles')}
                 className={`font-medium transition-colors ${activeSection === 'articles' ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
               >
@@ -291,9 +326,6 @@ const Index = () => {
               </button>
             </div>
             <div className="flex items-center gap-4">
-              <Button className="hidden md:flex bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity">
-                Войти
-              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -322,22 +354,6 @@ const Index = () => {
                 <div className="flex items-center gap-3">
                   <Icon name="Home" size={20} />
                   <span>Главная</span>
-                </div>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveSection('discussions');
-                  setMobileMenuOpen(false);
-                }}
-                className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
-                  activeSection === 'discussions' 
-                    ? 'bg-gradient-to-r from-primary to-secondary text-white' 
-                    : 'text-muted-foreground hover:bg-muted'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon name="MessageCircle" size={20} />
-                  <span>Обсуждения</span>
                 </div>
               </button>
               <button
@@ -372,9 +388,6 @@ const Index = () => {
                   <span>Копилка</span>
                 </div>
               </button>
-              <Button className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity mt-2">
-                Войти
-              </Button>
             </div>
           </div>
         )}
@@ -525,37 +538,25 @@ const Index = () => {
                 <Button
                   size="lg"
                   className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity text-lg px-8"
-                  onClick={() => setActiveSection('discussions')}
-                >
-                  <Icon name="MessageCircle" size={20} className="mr-2" />
-                  Начать общение
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="text-lg px-8 border-2 hover:bg-muted"
                   onClick={() => setActiveSection('articles')}
                 >
                   <Icon name="BookOpen" size={20} className="mr-2" />
                   Читать статьи
                 </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="text-lg px-8 border-2 hover:bg-muted"
+                  onClick={() => setActiveSection('library')}
+                >
+                  <Icon name="FolderOpen" size={20} className="mr-2" />
+                  Копилка материалов
+                </Button>
               </div>
             </section>
 
-            <section className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <section className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
               <Card className="border-2 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-scale-in">
-                <CardHeader>
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center mb-4">
-                    <Icon name="Users" size={24} className="text-white" />
-                  </div>
-                  <CardTitle className="text-2xl">Обсуждения</CardTitle>
-                  <CardDescription className="text-base">
-                    Общайтесь с коллегами в реальном времени, делитесь опытом и находите единомышленников
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-
-              <Card className="border-2 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-scale-in" style={{ animationDelay: '0.1s' }}>
                 <CardHeader>
                   <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-secondary to-accent flex items-center justify-center mb-4">
                     <Icon name="FileText" size={24} className="text-primary" />
@@ -567,7 +568,7 @@ const Index = () => {
                 </CardHeader>
               </Card>
 
-              <Card className="border-2 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-scale-in" style={{ animationDelay: '0.2s' }}>
+              <Card className="border-2 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-scale-in" style={{ animationDelay: '0.1s' }}>
                 <CardHeader>
                   <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-accent to-muted flex items-center justify-center mb-4">
                     <Icon name="FolderOpen" size={24} className="text-primary" />
@@ -579,61 +580,6 @@ const Index = () => {
                 </CardHeader>
               </Card>
             </section>
-          </div>
-        )}
-
-        {activeSection === 'discussions' && (
-          <div className="max-w-5xl mx-auto animate-fade-in">
-            <div className="mb-8">
-              <h2 className="text-4xl font-bold mb-2">Канал обсуждений</h2>
-              <p className="text-muted-foreground text-lg">Общайтесь с коллегами в реальном времени</p>
-            </div>
-            
-            <Card className="border-2 shadow-xl">
-              <CardHeader className="bg-gradient-to-r from-muted to-accent/50 border-b">
-                <CardTitle className="flex items-center gap-2">
-                  <Icon name="MessageSquare" size={24} />
-                  Общий чат
-                  <Badge variant="secondary" className="ml-auto">
-                    {messages.length} сообщений
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <ScrollArea className="h-[400px] p-6">
-                  <div className="space-y-4">
-                    {messages.map((msg) => (
-                      <div key={msg.id} className="flex gap-3 animate-fade-in">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
-                          <Icon name="User" size={20} className="text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-primary">{msg.author}</span>
-                            <span className="text-xs text-muted-foreground">{msg.time}</span>
-                          </div>
-                          <p className="text-foreground bg-muted/50 rounded-lg px-4 py-2">{msg.text}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-                <div className="p-4 border-t bg-muted/30">
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Напишите сообщение..."
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                      className="flex-1"
-                    />
-                    <Button onClick={handleSendMessage} disabled={loading} className="bg-gradient-to-r from-primary to-secondary">
-                      <Icon name="Send" size={20} />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         )}
 
@@ -759,14 +705,24 @@ const Index = () => {
                           </div>
                           <span className="text-sm font-medium">{article.author}</span>
                         </div>
-                        <Button 
-                          variant="outline" 
-                          className="hover:bg-primary hover:text-white transition-colors"
-                          onClick={() => loadArticleDetails(article.id)}
-                        >
-                          Читать
-                          <Icon name="ArrowRight" size={16} className="ml-2" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="outline" 
+                            className="hover:bg-primary hover:text-white transition-colors"
+                            onClick={() => loadArticleDetails(article.id)}
+                          >
+                            Читать
+                            <Icon name="ArrowRight" size={16} className="ml-2" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="hover:bg-destructive hover:text-white transition-colors"
+                            onClick={() => handleDeleteArticle(article.id)}
+                          >
+                            <Icon name="Trash2" size={16} />
+                          </Button>
+                        </div>
                       </div>
                     </CardHeader>
                   </Card>
@@ -812,9 +768,19 @@ const Index = () => {
                               <span>{material.downloads} скачиваний</span>
                             </div>
                           </div>
-                          <Button size="sm" className="bg-gradient-to-r from-primary to-secondary flex-shrink-0">
-                            <Icon name="Download" size={16} />
-                          </Button>
+                          <div className="flex flex-col gap-2">
+                            <Button size="sm" className="bg-gradient-to-r from-primary to-secondary flex-shrink-0">
+                              <Icon name="Download" size={16} />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="hover:bg-destructive hover:text-white transition-colors"
+                              onClick={() => handleDeleteMaterial(material.id)}
+                            >
+                              <Icon name="Trash2" size={16} />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>

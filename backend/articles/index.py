@@ -16,7 +16,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type',
                 'Access-Control-Max-Age': '86400'
             },
@@ -164,6 +164,48 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'body': json.dumps({'article': new_article}, ensure_ascii=False),
                 'isBase64Encoded': False
             }
+        
+        elif method == 'DELETE':
+            params = event.get('queryStringParameters') or {}
+            article_id = params.get('id')
+            
+            if not article_id:
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({'error': 'ID статьи обязателен'}, ensure_ascii=False),
+                    'isBase64Encoded': False
+                }
+            
+            cursor.execute('DELETE FROM articles WHERE id = %s RETURNING id', (article_id,))
+            deleted = cursor.fetchone()
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            if deleted:
+                return {
+                    'statusCode': 200,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({'success': True, 'id': deleted[0]}, ensure_ascii=False),
+                    'isBase64Encoded': False
+                }
+            else:
+                return {
+                    'statusCode': 404,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({'error': 'Статья не найдена'}, ensure_ascii=False),
+                    'isBase64Encoded': False
+                }
         
         else:
             return {
