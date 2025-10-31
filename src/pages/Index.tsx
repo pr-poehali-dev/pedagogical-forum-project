@@ -280,7 +280,7 @@ const Index = () => {
         setSelectedFile(null);
         setExtractedText('');
         setExtractedHtml('');
-        setExtractedImages([]);"
+        setExtractedImages([]);
         setUploadedFileUrl('');
       }
     } catch (error) {
